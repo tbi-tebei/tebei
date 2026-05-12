@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+
+# Data & index (usually large — store in DVC or cloud)
+data/raw/
+data/index/
+
+# Notebooks output
+notebooks/.ipynb_checkpoints/
+
+# Models & embeddings (large binary files)
+*.bin
+*.pt
+*.pth
+*.pkl
+*.npy
+*.npz
+*.faiss
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/

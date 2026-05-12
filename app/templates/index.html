@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ app_name }}</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>{{ app_name }}</h1>
+      <p class="subtitle">Information Retrieval Final Project</p>
+    </header>
+
+    <!-- Mode Toggle -->
+    <div class="mode-tabs">
+      <button class="tab active" data-mode="text">Text Search</button>
+      <button class="tab" data-mode="image">Image Search</button>
+      <button class="tab" data-mode="multimodal">Multimodal</button>
+    </div>
+
+    <!-- Text Search Panel -->
+    <section id="panel-text" class="panel active">
+      <div class="search-bar">
+        <input id="text-query" type="text" placeholder="Enter your search query..." />
+        <input id="text-topk" type="number" value="10" min="1" max="100" title="Top-K results" />
+        <button id="text-search-btn">Search</button>
+      </div>
+    </section>
+
+    <!-- Image Search Panel -->
+    <section id="panel-image" class="panel hidden">
+      <div class="search-bar">
+        <input id="image-query" type="text" placeholder="Optional text query..." />
+        <label class="file-label">
+          <input id="image-file" type="file" accept="image/*" />
+          Choose Image
+        </label>
+        <input id="image-topk" type="number" value="10" min="1" max="100" title="Top-K results" />
+        <button id="image-search-btn">Search</button>
+      </div>
+      <div id="image-preview-wrapper" class="hidden">
+        <img id="image-preview" src="" alt="Preview" />
+      </div>
+    </section>
+
+    <!-- Multimodal Search Panel -->
+    <section id="panel-multimodal" class="panel hidden">
+      <div class="search-bar">
+        <input id="multi-query" type="text" placeholder="Enter a text query..." />
+        <label class="file-label">
+          <input id="multi-file" type="file" accept="image/*" />
+          + Image (optional)
+        </label>
+        <input id="multi-topk" type="number" value="10" min="1" max="100" title="Top-K results" />
+        <button id="multi-search-btn">Search</button>
+      </div>
+    </section>
+
+    <!-- Status bar -->
+    <div id="status-bar" class="hidden">
+      <span id="status-msg"></span>
+    </div>
+
+    <!-- Results -->
+    <section id="results">
+      <div id="results-meta" class="hidden">
+        Found <strong id="results-count">0</strong> results for
+        "<em id="results-query"></em>" in <span id="results-time">0</span> ms
+      </div>
+      <div id="results-grid"></div>
+    </section>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
