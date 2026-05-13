@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     DATA_DIR: str = "data/raw"
     IMAGES_DIR: str = "data/raw/Images"
     CAPTIONS_FILE: str = "data/raw/captions.txt"
+    INDEX_DIR: str = "data/index"
 
     class Config:
         env_file = ".env"
