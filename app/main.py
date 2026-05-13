@@ -8,6 +8,7 @@ from app.core.config import settings
 app = FastAPI(title=settings.APP_NAME)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/public", StaticFiles(directory="app/public"), name="public")
 app.mount("/images", StaticFiles(directory=settings.IMAGES_DIR), name="images")
 
 app.include_router(search.router, prefix="/api/search", tags=["search"])

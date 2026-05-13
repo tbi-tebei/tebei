@@ -1,119 +1,165 @@
+/* ── Reset ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── Design tokens (from tebei logo palette) ────────── */
+:root {
+  --bg:          #0d1525;
+  --surface:     #162033;
+  --surface-2:   #1c2a42;
+  --border:      #243350;
+  --primary:     #6366f1;      /* indigo/purple */
+  --primary-dim: #4f46e5;
+  --blue:        #3b82f6;
+  --text:        #e2e8f0;
+  --text-muted:  #7e92b4;
+  --radius:      10px;
+}
+
+/* ── Base ───────────────────────────────────────────── */
 body {
   font-family: system-ui, -apple-system, sans-serif;
-  background: #f0f0f0;
-  color: #222;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
 }
 
 .container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem;
+  padding: 2.5rem 1.5rem 4rem;
 }
 
+/* ── Header ─────────────────────────────────────────── */
 header {
-  text-align: center;
-  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 2.25rem;
 }
 
-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
+.logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+  object-fit: contain;
 }
 
 .subtitle {
-  color: #777;
-  margin-top: 0.3rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: lowercase;
 }
 
-/* Search bar */
+/* ── Search bar ─────────────────────────────────────── */
 .search-bar {
   display: flex;
   gap: 0.5rem;
   max-width: 680px;
-  margin: 0 auto 1.5rem;
+  margin: 0 auto 1.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  transition: border-color 0.2s;
+}
+
+.search-bar:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
 }
 
 .search-bar input {
   flex: 1;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  background: transparent;
+  border: none;
   outline: none;
-  background: #fff;
+  font-size: 1rem;
+  color: var(--text);
+  min-width: 0;
 }
 
-.search-bar input:focus { border-color: #2563eb; }
+.search-bar input::placeholder { color: var(--text-muted); }
 
 .search-bar button {
-  padding: 0.75rem 1.5rem;
-  background: #2563eb;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 7px;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s;
 }
 
-.search-bar button:hover { background: #1d4ed8; }
-.search-bar button:disabled { background: #93c5fd; cursor: not-allowed; }
+.search-bar button:hover   { background: var(--primary-dim); }
+.search-bar button:disabled { background: #334; cursor: not-allowed; opacity: 0.6; }
 
-/* Status */
+/* ── Status ─────────────────────────────────────────── */
 .status {
   text-align: center;
   padding: 0.6rem;
   font-size: 0.9rem;
-  color: #555;
+  color: var(--text-muted);
   margin-bottom: 1rem;
 }
 
-/* Results meta */
+/* ── Results meta ────────────────────────────────────── */
 .results-meta {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
   text-align: center;
+  margin-bottom: 1.25rem;
 }
 
-/* Grid */
+.results-meta em { color: var(--text); font-style: normal; font-weight: 500; }
+
+/* ── Grid ───────────────────────────────────────────── */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1rem;
 }
 
+/* ── Card ───────────────────────────────────────────── */
 .card {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  transition: transform 0.15s;
   display: flex;
   flex-direction: column;
+  transition: transform 0.15s, border-color 0.15s;
 }
 
-.card:hover { transform: translateY(-2px); }
+.card:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+}
 
 .card img {
   width: 100%;
-  height: 180px;
+  height: 175px;
   object-fit: cover;
   display: block;
+  background: var(--surface-2);
 }
 
 .card-body {
-  padding: 0.65rem 0.75rem;
+  padding: 0.7rem 0.85rem 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex: 1;
 }
 
+/* score row */
 .card-score {
   display: flex;
   align-items: center;
@@ -122,29 +168,33 @@ header h1 {
 
 .score-bar-wrap {
   flex: 1;
-  height: 6px;
-  background: #e5e7eb;
+  height: 5px;
+  background: var(--surface-2);
   border-radius: 99px;
   overflow: hidden;
 }
 
 .score-bar {
   height: 100%;
-  background: #2563eb;
+  background: linear-gradient(90deg, var(--primary), var(--blue));
   border-radius: 99px;
 }
 
 .score-label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #2563eb;
+  color: var(--primary);
   white-space: nowrap;
+  min-width: 2.8rem;
+  text-align: right;
 }
 
+/* caption */
 .card-caption {
   font-size: 0.8rem;
-  color: #555;
-  line-height: 1.4;
+  color: var(--text-muted);
+  line-height: 1.45;
 }
 
+/* ── Util ───────────────────────────────────────────── */
 .hidden { display: none !important; }
