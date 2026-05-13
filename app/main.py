@@ -1,9 +1,14 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.api.routes import search, upload
 from app.core.config import settings
+
+# Ensure data directories exist before mounting static files
+os.makedirs(settings.IMAGES_DIR, exist_ok=True)
+os.makedirs(settings.INDEX_DIR, exist_ok=True)
 
 app = FastAPI(title=settings.APP_NAME)
 
