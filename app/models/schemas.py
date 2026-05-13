@@ -10,6 +10,8 @@ class SearchRequest(BaseModel):
 class SearchResult(BaseModel):
     image_id: str
     image_url: str
+    score: float
+    caption: str
 
 
 class SearchResponse(BaseModel):

@@ -47,9 +47,7 @@ header h1 {
   background: #fff;
 }
 
-.search-bar input:focus {
-  border-color: #2563eb;
-}
+.search-bar input:focus { border-color: #2563eb; }
 
 .search-bar button {
   padding: 0.75rem 1.5rem;
@@ -85,7 +83,7 @@ header h1 {
 /* Grid */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1rem;
 }
 
@@ -95,6 +93,8 @@ header h1 {
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   transition: transform 0.15s;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover { transform: translateY(-2px); }
@@ -106,13 +106,45 @@ header h1 {
   display: block;
 }
 
-.card-label {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
-  color: #888;
-  white-space: nowrap;
+.card-body {
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.card-score {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.score-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 99px;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.score-bar {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 99px;
+}
+
+.score-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2563eb;
+  white-space: nowrap;
+}
+
+.card-caption {
+  font-size: 0.8rem;
+  color: #555;
+  line-height: 1.4;
 }
 
 .hidden { display: none !important; }

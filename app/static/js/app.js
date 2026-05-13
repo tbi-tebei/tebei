@@ -1,8 +1,8 @@
 const queryInput = document.getElementById("query");
-const searchBtn = document.getElementById("search-btn");
-const status = document.getElementById("status");
-const grid = document.getElementById("grid");
-const resultsMeta = document.getElementById("results-meta");
+const searchBtn  = document.getElementById("search-btn");
+const status     = document.getElementById("status");
+const grid       = document.getElementById("grid");
+const resultsMeta  = document.getElementById("results-meta");
 const resultsCount = document.getElementById("results-count");
 const resultsQuery = document.getElementById("results-query");
 
@@ -38,12 +38,23 @@ async function search() {
       return;
     }
 
-    grid.innerHTML = data.results.map(({ image_id, image_url }) => `
-      <div class="card">
-        <img src="${image_url}" alt="${image_id}" loading="lazy" />
-        <div class="card-label">${image_id}</div>
-      </div>
-    `).join("");
+    grid.innerHTML = data.results.map(({ image_id, image_url, score, caption }) => {
+      const pct = Math.round(score * 100);
+      return `
+        <div class="card">
+          <img src="${image_url}" alt="${image_id}" loading="lazy" />
+          <div class="card-body">
+            <div class="card-score">
+              <div class="score-bar-wrap">
+                <div class="score-bar" style="width:${pct}%"></div>
+              </div>
+              <span class="score-label">${pct}%</span>
+            </div>
+            <div class="card-caption">${caption}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
 
   } catch (err) {
     status.textContent = `Error: ${err.message}`;
