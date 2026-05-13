@@ -2,15 +2,15 @@ import random
 from app.services.data_store import data_store
 
 
-class TextRetriever:
-    def search(self, query: str, top_k: int = 12) -> list[dict]:
-        # MOCK — replace with real retrieval later
+class ImageRetriever:
+    def search(self, image_bytes: bytes, top_k: int = 12) -> list[dict]:
+        # MOCK — replace with CLIP or similar later
         ids = data_store.image_ids
         if not ids:
             return []
         k = min(top_k, len(ids))
         sampled = random.sample(ids, k)
-        scores = sorted([random.uniform(0.5, 1.0) for _ in sampled], reverse=True)
+        scores = sorted([random.uniform(0.4, 1.0) for _ in sampled], reverse=True)
         return [
             {
                 "image_id": img,
