@@ -2,9 +2,15 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-app = FastAPI(title="Text-Image Search Engine")
+from app.api.routes import search
+from app.core.config import settings
+
+app = FastAPI(title=settings.APP_NAME)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/images", StaticFiles(directory=settings.IMAGES_DIR), name="images")
+
+app.include_router(search.router, prefix="/api/search", tags=["search"])
 
 templates = Jinja2Templates(directory="app/templates")
 

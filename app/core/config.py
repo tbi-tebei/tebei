@@ -3,6 +3,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "Text-Image Search Engine"
+    DATA_DIR: str = "data/raw"
+    IMAGES_DIR: str = "data/raw/Images"
+    CAPTIONS_FILE: str = "data/raw/captions.txt"
 
     class Config:
         env_file = ".env"

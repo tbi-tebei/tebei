@@ -8,8 +8,25 @@
 </head>
 <body>
   <div class="container">
-    <h1>Text-Image Search Engine</h1>
+    <header>
+      <h1>Text-Image Search</h1>
+      <p class="subtitle">Flickr30k Dataset</p>
+    </header>
+
+    <div class="search-bar">
+      <input id="query" type="text" placeholder="Search images by description..." autocomplete="off" />
+      <button id="search-btn">Search</button>
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <div id="results-meta" class="results-meta hidden">
+      <span id="results-count"></span> results for "<em id="results-query"></em>"
+    </div>
+
+    <div id="grid" class="grid"></div>
   </div>
+
   <script src="/static/js/app.js"></script>
 </body>
 </html>
