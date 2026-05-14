@@ -1,88 +1,83 @@
-# Text-Image Search Engine
-Information Retrieval — Final Project
+# Text-Image Search Engine — TBI Final Project
+
+Information Retrieval — search gambar menggunakan query teks atau gambar.
+
+**Live:** https://tebei.hafizmuh.site/
+
+---
+
+## Status retrieval
+
+| Fitur | Status |
+|-------|--------|
+| Text → Image search | **Aktif** — CLIP multilingual (`clip-ViT-B-32-multilingual-v1`) |
+| Image → Image search | **Aktif** — CLIP image encoder (`clip-ViT-B-32`) |
+| Multilingual query | **Aktif** — support Bahasa Indonesia & 50+ bahasa lain |
+| Dataset | Flickr30k — 31.784 gambar |
+
+Model text dan image di-embed ke ruang yang sama (512-dim). FAISS IndexFlatIP dipakai untuk cosine similarity search.
+
+---
 
 ## Stack
-- **Backend**: FastAPI
-- **Frontend**: Jinja2 templates + vanilla JS
-- **Python**: 3.11+
 
-## Setup
+- **Backend**: FastAPI + Uvicorn
+- **Model**: sentence-transformers (CLIP multilingual)
+- **Index**: FAISS
+- **Runtime**: Docker (Python 3.11)
 
-```bash
-python3 -m venv env
-source env/bin/activate        # Windows: env\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env
-```
+---
 
-## Run
+## Run (Docker)
 
 ```bash
-uvicorn app.main:app --reload
-# or
-make run
+# 1. Build image
+docker-compose build
+
+# 2. Build FAISS index dari dataset (sekali saja)
+docker-compose run --rm app python scripts/build_index.py
+
+# 3. Jalankan server
+docker-compose up
 ```
 
-Open http://localhost:8000
+Buka http://localhost:8001
+
+---
 
 ## Project Structure
 
 ```
 app/
-├── main.py                  # FastAPI entry point — add routes here
-├── core/config.py           # App settings (loaded from .env)
-├── models/schemas.py        # Pydantic request/response schemas
+├── main.py
+├── core/config.py
+├── models/schemas.py
 ├── api/routes/
-│   ├── search.py            # Search endpoints
-│   └── index.py             # Index management endpoints
+│   ├── search.py            # POST /api/search/text, /api/search/image
+│   └── upload.py
 ├── services/
-│   ├── text_retrieval.py    # Text retrieval logic
-│   ├── image_retrieval.py   # Image / multimodal retrieval logic
-│   └── indexer.py           # Index builder
-├── templates/index.html     # Frontend HTML
-└── static/
-    ├── css/style.css
-    └── js/app.js
+│   ├── clip_service.py      # CLIP model + FAISS index (singleton)
+│   ├── text_retrieval.py
+│   ├── image_retrieval.py
+│   └── data_store.py
+└── templates/index.html
 data/
 ├── raw/                     # Dataset (gitignored)
-└── index/                   # Built index files (gitignored)
-notebooks/                   # Experiments & exploration
-tests/
-└── test_search.py
+└── index/                   # FAISS index files (gitignored)
+scripts/
+└── build_index.py           # Offline: encode gambar → FAISS index
+notebooks/
+└── build_index_colab.ipynb  # Alternatif: build index di Google Colab (GPU)
 ```
+
+---
 
 ## API
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` | Web UI |
+| POST | `/api/search/text` | Text → image search |
+| POST | `/api/search/image` | Image → image search |
 | GET | `/api/health` | Health check |
-| GET | `/docs` | Swagger UI (auto-generated) |
-
-## Common Commands
-
-```bash
-make run          # start dev server
-make test         # run tests
-make lint         # check code style
-make build-index  # trigger index build (server must be running)
-```
-
-## Tests
-
-```bash
-pytest tests/ -v
-```
-
-## Dependencies
-
-Uncomment the relevant lines in `requirements.txt` based on your retrieval approach, then re-run `pip install -r requirements.txt`.
-
-| Approach | Library |
-|----------|---------|
-| BM25 | `rank-bm25` |
-| TF-IDF | `scikit-learn` |
-| Text/image embeddings | `sentence-transformers` |
-| CLIP embeddings | `open-clip-torch` |
-| Vector similarity search | `faiss-cpu` |
-| Image I/O | `Pillow` |
+| GET | `/docs` | Swagger UI |

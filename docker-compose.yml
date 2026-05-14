@@ -9,6 +9,7 @@ services:
       - "8001:8000"
     volumes:
       - ./data:/app/data
+      - hf_cache:/root/.cache/huggingface
     environment:
       - PYTHONUNBUFFERED=1
     healthcheck:
@@ -17,3 +18,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+
+volumes:
+  hf_cache:

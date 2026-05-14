@@ -1,21 +1,15 @@
-import random
+from app.services.clip_service import clip_service
 from app.services.data_store import data_store
 
 
 class TextRetriever:
     def search(self, query: str, top_k: int = 12) -> list[dict]:
-        # MOCK — replace with real retrieval later
-        ids = data_store.image_ids
-        if not ids:
-            return []
-        k = min(top_k, len(ids))
-        sampled = random.sample(ids, k)
-        scores = sorted([random.uniform(0.5, 1.0) for _ in sampled], reverse=True)
+        hits = clip_service.search_by_text(query, top_k)
         return [
             {
-                "image_id": img,
+                "image_id": img_id,
                 "score": round(score, 4),
-                "caption": data_store.captions[img][0] if data_store.captions.get(img) else "",
+                "caption": data_store.captions.get(img_id, [""])[0],
             }
-            for img, score in zip(sampled, scores)
+            for img_id, score in hits
         ]
