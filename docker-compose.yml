@@ -9,6 +9,7 @@ services:
       - "8001:8000"
     volumes:
       - ./data:/app/data
+      - ./app:/app/app
       - hf_cache:/root/.cache/huggingface
     environment:
       - PYTHONUNBUFFERED=1

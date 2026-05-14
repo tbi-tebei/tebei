@@ -8,26 +8,23 @@ from PIL import Image
 
 from app.core.config import settings
 
-# clip-ViT-B-32-multilingual-v1 encodes multilingual text into CLIP's embedding space
-# clip-ViT-B-32 encodes images — both produce 512-dim vectors in the same space
-TEXT_MODEL_NAME = "clip-ViT-B-32-multilingual-v1"
-IMAGE_MODEL_NAME = "clip-ViT-B-32"
+# Single model for both text and image — saves ~600MB RAM vs two-model approach.
+# clip-ViT-B-32 maps both text (English) and images to the same 512-dim space.
+MODEL_NAME = "clip-ViT-B-32"
 
 
 class CLIPService:
     def __init__(self):
-        self._text_model = None
-        self._image_model = None
+        self._model = None
         self._index: faiss.Index | None = None
         self._image_ids: list[str] = []
 
     def _load(self):
-        if self._text_model is not None:
+        if self._model is not None:
             return
         from sentence_transformers import SentenceTransformer
 
-        self._text_model = SentenceTransformer(TEXT_MODEL_NAME, device="cpu")
-        self._image_model = SentenceTransformer(IMAGE_MODEL_NAME, device="cpu")
+        self._model = SentenceTransformer(MODEL_NAME, device="cpu")
         self._load_index()
 
     def _load_index(self):
@@ -60,13 +57,13 @@ class CLIPService:
 
     def search_by_text(self, query: str, top_k: int = 12) -> list[tuple[str, float]]:
         self._load()
-        emb = self._text_model.encode([query], convert_to_numpy=True, normalize_embeddings=True)
+        emb = self._model.encode([query], convert_to_numpy=True, normalize_embeddings=True)
         return self._search(emb, top_k)
 
     def search_by_image(self, image_bytes: bytes, top_k: int = 12) -> list[tuple[str, float]]:
         self._load()
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        emb = self._image_model.encode([img], convert_to_numpy=True, normalize_embeddings=True)
+        emb = self._model.encode([img], convert_to_numpy=True, normalize_embeddings=True)
         return self._search(emb, top_k)
 
 
