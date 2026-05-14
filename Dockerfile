@@ -5,7 +5,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip --timeout=300 && \
+    pip install --no-cache-dir -r requirements.txt --timeout=300
 
 COPY app/ ./app/
 COPY scripts/ ./scripts/
