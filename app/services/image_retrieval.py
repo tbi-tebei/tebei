@@ -1,10 +1,10 @@
-from app.services.clip_service import clip_service
 from app.services.data_store import data_store
+from app.services.query_expansion import expand_image_query
 
 
 class ImageRetriever:
     def search(self, image_bytes: bytes, top_k: int = 12) -> list[dict]:
-        hits = clip_service.search_by_image(image_bytes, top_k)
+        hits = expand_image_query(image_bytes, top_k)
         return [
             {
                 "image_id": img_id,

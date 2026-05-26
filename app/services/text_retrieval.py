@@ -1,10 +1,10 @@
-from app.services.clip_service import clip_service
 from app.services.data_store import data_store
+from app.services.query_expansion import expand_text_query
 
 
 class TextRetriever:
     def search(self, query: str, top_k: int = 12) -> list[dict]:
-        hits = clip_service.search_by_text(query, top_k)
+        hits = expand_text_query(query, top_k)
         return [
             {
                 "image_id": img_id,

@@ -55,15 +55,31 @@ class CLIPService:
             if idx >= 0
         ]
 
-    def search_by_text(self, query: str, top_k: int = 12) -> list[tuple[str, float]]:
+    def get_vectors(self, indices: list[int]) -> np.ndarray:
+        """Reconstruct stored vectors from the FAISS index by position."""
+        return np.vstack([self._index.reconstruct(int(i)) for i in indices if i >= 0])
+
+    def encode_text(self, query: str) -> np.ndarray:
+        """Encode a text string into a CLIP embedding."""
         self._load()
-        emb = self._model.encode([query], convert_to_numpy=True, normalize_embeddings=True)
+        return self._model.encode([query], convert_to_numpy=True, normalize_embeddings=True)
+
+    def encode_image(self, image_bytes: bytes) -> np.ndarray:
+        """Encode raw image bytes into a CLIP embedding."""
+        self._load()
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        return self._model.encode([img], convert_to_numpy=True, normalize_embeddings=True)
+
+    def search_by_embedding(self, emb: np.ndarray, top_k: int = 12) -> list[tuple[str, float]]:
+        """Search the FAISS index with a precomputed embedding vector."""
+        return self._search(emb, top_k)
+
+    def search_by_text(self, query: str, top_k: int = 12) -> list[tuple[str, float]]:
+        emb = self.encode_text(query)
         return self._search(emb, top_k)
 
     def search_by_image(self, image_bytes: bytes, top_k: int = 12) -> list[tuple[str, float]]:
-        self._load()
-        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        emb = self._model.encode([img], convert_to_numpy=True, normalize_embeddings=True)
+        emb = self.encode_image(image_bytes)
         return self._search(emb, top_k)
 
 
