@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import requests
 import numpy as np
 
@@ -68,11 +70,12 @@ def _get_feedback(emb: np.ndarray) -> tuple[list[int], list[int]]:
     return positive, negative
 
 
-def _call_gemini(query: str) -> list[str]:
-    """Call Gemini API to generate visual descriptions for a query."""
+@lru_cache(maxsize=256)
+def _call_gemini(query: str) -> tuple[str, ...]:
+    """Call Gemini API to generate visual descriptions. Results are cached."""
     api_key = settings.GEMINI_API_KEY
     if not api_key:
-        return []
+        return ()
 
     url = GEMINI_URL.format(api_key)
     payload = {
@@ -89,20 +92,20 @@ def _call_gemini(query: str) -> list[str]:
         resp.raise_for_status()
         text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
         lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
-        return lines[:3]
+        return tuple(lines[:3])
     except Exception:
-        return []
+        return ()
 
 
 def _encode_with_llm(query: str) -> tuple[np.ndarray, list[str]]:
     """Encode query + LLM-generated descriptions into an averaged CLIP vector."""
-    descriptions = _call_gemini(query)
+    descriptions = list(_call_gemini(query))
     if not descriptions:
         return clip_service.encode_text(query), descriptions
 
     all_texts = [query] + descriptions
-    embeddings = [clip_service.encode_text(t) for t in all_texts]
-    avg_emb = np.mean(np.vstack(embeddings), axis=0, keepdims=True)
+    embeddings = clip_service.encode_texts(all_texts)
+    avg_emb = np.mean(embeddings, axis=0, keepdims=True)
     avg_emb = avg_emb / np.linalg.norm(avg_emb)
     return avg_emb.astype(np.float32), descriptions
 

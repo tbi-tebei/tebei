@@ -83,6 +83,11 @@ class CLIPService:
         self._load()
         return self._model.encode([query], convert_to_numpy=True, normalize_embeddings=True)
 
+    def encode_texts(self, queries: list[str]) -> np.ndarray:
+        """Encode multiple text strings in a single batch."""
+        self._load()
+        return self._model.encode(queries, convert_to_numpy=True, normalize_embeddings=True)
+
     def encode_image(self, image_bytes: bytes) -> np.ndarray:
         """Encode raw image bytes into a CLIP embedding."""
         self._load()
