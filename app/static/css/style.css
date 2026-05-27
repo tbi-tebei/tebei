@@ -285,7 +285,7 @@ button[id$="-btn"]:disabled { opacity: 0.4; cursor: not-allowed; }
   font-size: 0.85rem;
   color: var(--muted);
   text-align: center;
-  margin: 1.5rem 0 0.5rem;
+  margin: 1.5rem 0 1.25rem;
 }
 
 .results-meta em { color: var(--text); font-style: normal; font-weight: 500; }
@@ -294,30 +294,6 @@ button[id$="-btn"]:disabled { opacity: 0.4; cursor: not-allowed; }
   margin-left: 0.5rem;
   color: var(--muted);
   opacity: 0.7;
-}
-
-/* ── Pipeline info ──────────────────────────────────── */
-.pipeline-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-
-.pipeline-tag {
-  font-size: 0.7rem;
-  padding: 0.2rem 0.55rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--muted);
-}
-
-.pipeline-arrow {
-  font-size: 0.7rem;
-  color: var(--border);
 }
 
 /* ── Grid ───────────────────────────────────────────── */

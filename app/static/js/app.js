@@ -15,7 +15,6 @@ const resultsMeta   = document.getElementById("results-meta");
 const resultsCount  = document.getElementById("results-count");
 const resultsQuery  = document.getElementById("results-query");
 const resultsTime   = document.getElementById("results-time");
-const pipelineInfo  = document.getElementById("pipeline-info");
 const grid          = document.getElementById("grid");
 const spinner       = document.getElementById("spinner");
 const loadMoreWrap  = document.getElementById("load-more-wrap");
@@ -43,7 +42,6 @@ function clearStatus() { statusEl.className = "status hidden"; }
 function clearResults() {
   grid.innerHTML = "";
   resultsMeta.classList.add("hidden");
-  pipelineInfo.classList.add("hidden");
   loadMoreWrap.classList.add("hidden");
   allResults = [];
   displayedCount = 0;
@@ -81,7 +79,6 @@ function showResults(data, elapsed) {
   resultsQuery.textContent = data.query;
   resultsTime.textContent = elapsed ? `(${(elapsed / 1000).toFixed(1)}s)` : "";
   resultsMeta.classList.remove("hidden");
-  pipelineInfo.classList.remove("hidden");
 
   if (data.results.length === 0) {
     setStatus("No results found.");
