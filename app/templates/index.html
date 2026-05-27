@@ -84,16 +84,53 @@
       </div>
     </div>
 
+    <!-- Loading spinner -->
+    <div id="spinner" class="spinner hidden">
+      <div class="spinner-ring"></div>
+      <p class="spinner-text">Searching...</p>
+    </div>
+
     <!-- Status -->
     <div id="status" class="status hidden"></div>
 
     <!-- Results meta -->
     <div id="results-meta" class="results-meta hidden">
       <span id="results-count"></span> results for "<em id="results-query"></em>"
+      <span id="results-time" class="results-time"></span>
+    </div>
+
+    <!-- Pipeline info -->
+    <div id="pipeline-info" class="pipeline-info hidden">
+      <span class="pipeline-tag">Translation</span>
+      <span class="pipeline-arrow">&#8594;</span>
+      <span class="pipeline-tag">LLM Expansion</span>
+      <span class="pipeline-arrow">&#8594;</span>
+      <span class="pipeline-tag">PRF (Rocchio)</span>
+      <span class="pipeline-arrow">&#8594;</span>
+      <span class="pipeline-tag">BM25 Hybrid</span>
+      <span class="pipeline-arrow">&#8594;</span>
+      <span class="pipeline-tag">RRF Fusion</span>
+      <span class="pipeline-arrow">&#8594;</span>
+      <span class="pipeline-tag">Reranker</span>
     </div>
 
     <!-- Grid -->
     <div id="grid" class="grid"></div>
+
+    <!-- Load more -->
+    <div id="load-more-wrap" class="load-more-wrap hidden">
+      <button id="load-more-btn">Load more results</button>
+    </div>
+
+    <!-- Image modal -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <img id="modal-img" alt="" />
+        <p id="modal-caption"></p>
+        <button id="modal-close" class="modal-close">&times;</button>
+      </div>
+    </div>
 
   </div>
   <script src="/static/js/app.js"></script>
