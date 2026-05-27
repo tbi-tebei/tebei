@@ -59,18 +59,26 @@ def main():
     matrix = np.vstack(all_embeddings).astype(np.float32)
     print(f"Matrix : {matrix.shape}")
 
-    # IndexFlatIP = cosine similarity (vectors are L2-normalized)
-    index = faiss.IndexFlatIP(matrix.shape[1])
+    # HNSW graph index for approximate nearest neighbor search (L2 distance).
+    # For L2-normalized vectors, minimizing L2 is equivalent to maximizing cosine similarity.
+    M = 32
+    index = faiss.IndexHNSWFlat(matrix.shape[1], M)
+    index.hnsw.efConstruction = 128
     index.add(matrix)
 
     index_path = os.path.join(index_dir, "image_index.faiss")
     ids_path = os.path.join(index_dir, "image_ids.json")
+    matrix_path = os.path.join(index_dir, "image_matrix.npy")
+
     faiss.write_index(index, index_path)
     with open(ids_path, "w") as f:
         json.dump(all_ids, f)
+    np.save(matrix_path, matrix)
 
-    print(f"Saved : {index.ntotal} vectors → {index_path}")
-    print(f"IDs   : {ids_path}")
+    print(f"Saved  : {index.ntotal} vectors (HNSW M={M})")
+    print(f"Index  : {index_path}")
+    print(f"Matrix : {matrix_path}")
+    print(f"IDs    : {ids_path}")
 
 
 if __name__ == "__main__":

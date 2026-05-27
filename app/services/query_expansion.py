@@ -52,8 +52,8 @@ def _rocchio_refine(
 def _get_feedback(emb: np.ndarray) -> tuple[list[int], list[int]]:
     """Retrieve positive (top-K) and negative (bottom-K) indices.
 
-    Positive: top-K most similar vectors (standard FAISS search).
-    Negative: top-K most dissimilar vectors (search with negated query).
+    Positive: top-K most similar vectors via HNSW index.
+    Negative: top-K most dissimilar vectors via brute-force dot product.
     """
     n_total = clip_service._index.ntotal
     k_pos = min(K_FEEDBACK, n_total)
@@ -63,8 +63,7 @@ def _get_feedback(emb: np.ndarray) -> tuple[list[int], list[int]]:
     _, pos_indices = clip_service._index.search(emb_f32, k_pos)
     positive = [int(i) for i in pos_indices[0] if i >= 0]
 
-    _, neg_indices = clip_service._index.search(-emb_f32, k_neg)
-    negative = [int(i) for i in neg_indices[0] if i >= 0]
+    negative = clip_service.search_negative(emb_f32, k_neg)
 
     return positive, negative
 
