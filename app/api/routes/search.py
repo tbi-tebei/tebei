@@ -1,17 +1,21 @@
-from fastapi import APIRouter, UploadFile, File, Form, Query
+from fastapi import APIRouter, Request, UploadFile, File, Form, Query
 from app.models.schemas import SearchRequest, SearchResponse, SearchResult
 from app.services.text_retrieval import TextRetriever
 from app.services.image_retrieval import ImageRetriever
 from app.services.data_store import data_store
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 text_retriever = TextRetriever()
 image_retriever = ImageRetriever()
 
 
 @router.post("/text", response_model=SearchResponse)
-async def text_search(request: SearchRequest):
-    hits = text_retriever.search(request.query, top_k=request.top_k)
+@limiter.limit("15/minute")
+async def text_search(request: Request, search_request: SearchRequest):
+    hits = text_retriever.search(search_request.query, top_k=search_request.top_k)
     results = [
         SearchResult(
             image_id=h["image_id"],
@@ -21,11 +25,13 @@ async def text_search(request: SearchRequest):
         )
         for h in hits
     ]
-    return SearchResponse(query=request.query, results=results, total=len(results))
+    return SearchResponse(query=search_request.query, results=results, total=len(results))
 
 
 @router.post("/image", response_model=SearchResponse)
+@limiter.limit("10/minute")
 async def image_search(
+    request: Request,
     image: UploadFile = File(...),
     top_k: int = Form(12),
 ):

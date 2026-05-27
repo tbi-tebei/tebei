@@ -3,11 +3,17 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.api.routes import search, upload
 from app.core.config import settings
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +35,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.APP_NAME, lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/public", StaticFiles(directory="app/public"), name="public")
