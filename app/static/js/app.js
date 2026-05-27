@@ -75,7 +75,7 @@ function showResults(data, elapsed) {
   allResults = data.results;
   displayedCount = 0;
 
-  resultsCount.textContent = data.total;
+  resultsCount.textContent = `${Math.min(PAGE_SIZE, data.results.length)} of ${data.total}`;
   resultsQuery.textContent = data.query;
   resultsTime.textContent = elapsed ? `(${(elapsed / 1000).toFixed(1)}s)` : "";
   resultsMeta.classList.remove("hidden");
@@ -94,6 +94,7 @@ function loadPage() {
     grid.appendChild(renderCard(allResults[i]));
   }
   displayedCount = end;
+  resultsCount.textContent = `${displayedCount} of ${allResults.length}`;
 
   if (displayedCount < allResults.length) {
     loadMoreWrap.classList.remove("hidden");
