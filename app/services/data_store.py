@@ -3,29 +3,14 @@ import logging
 import os
 from collections import Counter
 
+import nltk
+from nltk.corpus import stopwords
 from rank_bm25 import BM25Okapi
 
 from app.core.config import settings
 
-STOP_WORDS = {
-    "a", "an", "the", "is", "are", "was", "were", "in", "on", "at", "to",
-    "of", "and", "or", "for", "with", "by", "from", "up", "as", "it", "its",
-    "that", "this", "has", "have", "had", "be", "been", "being", "do", "does",
-    "did", "will", "would", "could", "should", "may", "might", "can", "shall",
-    "not", "no", "but", "if", "so", "than", "too", "very", "just", "about",
-    "into", "over", "after", "before", "between", "through", "during", "while",
-    "out", "off", "down", "then", "there", "here", "where", "when", "what",
-    "who", "which", "how", "all", "each", "every", "both", "few", "more",
-    "most", "other", "some", "such", "only", "own", "same", "also", "back",
-    "even", "still", "already", "since", "he", "she", "they", "him", "her",
-    "his", "their", "them", "we", "our", "you", "your", "i", "me", "my",
-    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    "ten", "many", "much", "another", "next", "new", "old", "big", "small",
-    "large", "long", "little", "well", "way", "because", "like", "look",
-    "looking", "looks", "appears", "wearing", "near", "front", "behind",
-    "around", "along", "across", "against", "above", "below", "beside",
-    "under", "inside", "outside", "left", "right", "side", "top",
-}
+nltk.download("stopwords", quiet=True)
+STOP_WORDS = set(stopwords.words("english"))
 
 logger = logging.getLogger(__name__)
 
