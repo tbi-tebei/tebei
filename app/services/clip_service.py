@@ -74,13 +74,6 @@ class CLIPService:
         """Search the FAISS index with a precomputed embedding vector."""
         return self._search(emb, top_k)
 
-    def search_by_text(self, query: str, top_k: int = 12) -> list[tuple[str, float]]:
-        emb = self.encode_text(query)
-        return self._search(emb, top_k)
-
-    def search_by_image(self, image_bytes: bytes, top_k: int = 12) -> list[tuple[str, float]]:
-        emb = self.encode_image(image_bytes)
-        return self._search(emb, top_k)
 
 
 clip_service = CLIPService()

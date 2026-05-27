@@ -50,15 +50,22 @@ def _rocchio_refine(
 
 
 def _get_feedback(emb: np.ndarray) -> tuple[list[int], list[int]]:
-    """Retrieve positive (top-K) and negative (bottom-K) indices from initial search."""
+    """Retrieve positive (top-K) and negative (bottom-K) indices.
+
+    Positive: top-K most similar vectors (standard FAISS search).
+    Negative: top-K most dissimilar vectors (search with negated query).
+    """
     n_total = clip_service._index.ntotal
     k_pos = min(K_FEEDBACK, n_total)
     k_neg = min(K_NEGATIVE, n_total)
-    k_all = min(k_pos + k_neg, n_total)
-    scores, indices = clip_service._index.search(emb.astype(np.float32), k_all)
-    valid = [(i, s) for i, s in zip(indices[0], scores[0]) if i >= 0]
-    positive = [i for i, _ in valid[:k_pos]]
-    negative = [i for i, _ in valid[-k_neg:]] if len(valid) > k_pos else []
+
+    emb_f32 = emb.astype(np.float32)
+    _, pos_indices = clip_service._index.search(emb_f32, k_pos)
+    positive = [int(i) for i in pos_indices[0] if i >= 0]
+
+    _, neg_indices = clip_service._index.search(-emb_f32, k_neg)
+    negative = [int(i) for i in neg_indices[0] if i >= 0]
+
     return positive, negative
 
 
@@ -99,20 +106,6 @@ def _encode_with_llm(query: str) -> tuple[np.ndarray, list[str]]:
     avg_emb = np.mean(np.vstack(embeddings), axis=0, keepdims=True)
     avg_emb = avg_emb / np.linalg.norm(avg_emb)
     return avg_emb.astype(np.float32), descriptions
-
-
-def expand_text_query(query: str, top_k: int = 12) -> list[tuple[str, float]]:
-    """Text-to-image search with PRF only (no LLM)."""
-    emb = clip_service.encode_text(query)
-    if not clip_service.is_ready():
-        return []
-
-    positive, negative = _get_feedback(emb)
-    if not positive:
-        return clip_service.search_by_embedding(emb, top_k)
-
-    refined = _rocchio_refine(emb, positive, negative)
-    return clip_service.search_by_embedding(refined, top_k)
 
 
 def expand_image_query(image_bytes: bytes, top_k: int = 12) -> list[tuple[str, float]]:
