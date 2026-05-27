@@ -15,6 +15,89 @@ STOP_WORDS = set(stopwords.words("english"))
 logger = logging.getLogger(__name__)
 
 
+class PatriciaNode:
+    """Node in a Patricia tree (compressed trie / radix tree)."""
+    __slots__ = ("prefix", "children", "terms")
+
+    def __init__(self, prefix: str = ""):
+        self.prefix = prefix
+        self.children: dict[str, PatriciaNode] = {}
+        self.terms: list[str] = []
+
+
+class PatriciaTrie:
+    """Compressed trie where single-child chains are merged into one node."""
+
+    def __init__(self):
+        self._root = PatriciaNode()
+
+    def insert(self, term: str):
+        key = term.lower()
+        node = self._root
+        i = 0
+        while i < len(key):
+            ch = key[i]
+            if ch not in node.children:
+                leaf = PatriciaNode(key[i:])
+                leaf.terms.append(term)
+                node.children[ch] = leaf
+                return
+            child = node.children[ch]
+            p = child.prefix
+            j = 0
+            while j < len(p) and i < len(key) and p[j] == key[i]:
+                j += 1
+                i += 1
+            if j < len(p):
+                # Split: shared prefix up to j, then diverge
+                split = PatriciaNode(p[:j])
+                split.terms = child.terms[:]
+                child.prefix = p[j:]
+                split.children[p[j]] = child
+                if i < len(key):
+                    new_leaf = PatriciaNode(key[i:])
+                    new_leaf.terms.append(term)
+                    split.children[key[i]] = new_leaf
+                split.terms.append(term)
+                node.children[ch] = split
+                return
+            child.terms.append(term)
+            node = child
+        node.terms.append(term)
+
+    def _collect(self, node: PatriciaNode, limit: int) -> list[str]:
+        results = list(node.terms[:limit])
+        if len(results) >= limit:
+            return results[:limit]
+        for child in node.children.values():
+            results.extend(self._collect(child, limit - len(results)))
+            if len(results) >= limit:
+                break
+        return results[:limit]
+
+    def search(self, prefix: str, limit: int = 8) -> list[str]:
+        key = prefix.lower()
+        node = self._root
+        i = 0
+        while i < len(key):
+            ch = key[i]
+            if ch not in node.children:
+                return []
+            child = node.children[ch]
+            p = child.prefix
+            j = 0
+            while j < len(p) and i < len(key) and p[j] == key[i]:
+                j += 1
+                i += 1
+            if i < len(key) and j >= len(p):
+                node = child
+                continue
+            if i >= len(key):
+                return child.terms[:limit]
+            return []
+        return node.terms[:limit]
+
+
 class DataStore:
     """In-memory store for image IDs, captions, and BM25 index."""
 
@@ -24,7 +107,7 @@ class DataStore:
         self.bm25: BM25Okapi | None = None
         self._bm25_ids: list[str] = []
         self.suggestions: list[str] = []
-        self._word_list: list[str] = []
+        self._trie = PatriciaTrie()
         self.load()
 
     def load(self):
@@ -91,16 +174,19 @@ class DataStore:
                      if not any(term in bg for bg in top_bigrams)]
         self.suggestions = top_bigrams[:10] + top_words[:10]
 
-        self._word_list = [term for term, _ in word_freq.most_common(500)]
-        self._word_list.extend(term for term, _ in bigram_freq.most_common(200))
-        logger.info("Built %d suggestions, %d autocomplete terms", len(self.suggestions), len(self._word_list))
+        self._trie = PatriciaTrie()
+        for term, _ in word_freq.most_common(500):
+            self._trie.insert(term)
+        for term, _ in bigram_freq.most_common(200):
+            self._trie.insert(term)
+        logger.info("Built %d suggestions, trie loaded", len(self.suggestions))
 
     def autocomplete(self, prefix: str, limit: int = 8) -> list[str]:
-        """Return terms matching the given prefix."""
+        """Return terms matching the given prefix via Patricia tree lookup."""
         prefix = prefix.lower().strip()
         if not prefix:
             return []
-        return [t for t in self._word_list if t.startswith(prefix)][:limit]
+        return self._trie.search(prefix, limit)
 
     def add_image(self, image_id: str, caption: str):
         if image_id not in self.captions:
