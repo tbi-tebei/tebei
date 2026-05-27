@@ -1,7 +1,8 @@
-from fastapi import APIRouter, UploadFile, File, Form
+from fastapi import APIRouter, UploadFile, File, Form, Query
 from app.models.schemas import SearchRequest, SearchResponse, SearchResult
 from app.services.text_retrieval import TextRetriever
 from app.services.image_retrieval import ImageRetriever
+from app.services.data_store import data_store
 
 router = APIRouter()
 text_retriever = TextRetriever()
@@ -40,3 +41,13 @@ async def image_search(
         for h in hits
     ]
     return SearchResponse(query="image similarity search", results=results, total=len(results))
+
+
+@router.get("/suggestions")
+async def get_suggestions():
+    return {"suggestions": data_store.suggestions}
+
+
+@router.get("/autocomplete")
+async def autocomplete(q: str = Query("", min_length=1)):
+    return {"results": data_store.autocomplete(q)}

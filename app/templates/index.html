@@ -33,13 +33,17 @@
 
     <!-- ── Panel: Text Search ── -->
     <div id="panel-text" class="panel active">
-      <div class="search-bar">
-        <input id="text-query" type="text" placeholder="Search images by description..." autocomplete="off" />
-        <button id="text-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
-          Search
-        </button>
+      <div class="search-wrap">
+        <div class="search-bar">
+          <input id="text-query" type="text" placeholder="Search images by description..." autocomplete="off" />
+          <button id="text-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+            Search
+          </button>
+        </div>
+        <div id="autocomplete-list" class="autocomplete-list hidden"></div>
       </div>
+      <div id="suggestions" class="suggestions"></div>
     </div>
 
     <!-- ── Panel: Image Search ── -->

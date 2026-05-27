@@ -127,6 +127,72 @@ header {
 
 .search-bar input::placeholder { color: var(--muted); }
 
+/* ── Search wrap (for autocomplete positioning) ────── */
+.search-wrap {
+  position: relative;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.search-wrap .search-bar {
+  max-width: none;
+  margin: 0;
+}
+
+/* ── Autocomplete dropdown ─────────────────────────── */
+.autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.autocomplete-item {
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+  background: var(--surface-2);
+}
+
+/* ── Suggestion chips ──────────────────────────────── */
+.suggestions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 680px;
+  margin: 0.75rem auto 0;
+}
+
+.suggestion-chip {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.suggestion-chip:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
 /* ── Shared button style ────────────────────────────── */
 button[id$="-btn"], button[id$="-search-btn"] {
   display: inline-flex;

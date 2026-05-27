@@ -229,7 +229,81 @@ async function runTextSearch() {
 }
 
 textBtnEl.addEventListener("click", runTextSearch);
-textQueryEl.addEventListener("keydown", (e) => { if (e.key === "Enter") runTextSearch(); });
+textQueryEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { closeAutocomplete(); runTextSearch(); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); navigateAutocomplete(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); navigateAutocomplete(-1); }
+  else if (e.key === "Escape") { closeAutocomplete(); }
+});
+
+// ── Suggestions ──────────────────────────────────────────
+const suggestionsEl = document.getElementById("suggestions");
+
+fetch("/api/search/suggestions")
+  .then((r) => r.json())
+  .then((data) => {
+    suggestionsEl.innerHTML = data.suggestions
+      .map((s) => `<button class="suggestion-chip">${s}</button>`)
+      .join("");
+    suggestionsEl.querySelectorAll(".suggestion-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        textQueryEl.value = chip.textContent;
+        runTextSearch();
+      });
+    });
+  })
+  .catch(() => {});
+
+// ── Autocomplete ─────────────────────────────────────────
+const acList = document.getElementById("autocomplete-list");
+let acIndex = -1;
+let acDebounce = null;
+
+function closeAutocomplete() {
+  acList.classList.add("hidden");
+  acList.innerHTML = "";
+  acIndex = -1;
+}
+
+function navigateAutocomplete(dir) {
+  const items = acList.querySelectorAll(".autocomplete-item");
+  if (!items.length) return;
+  items[acIndex]?.classList.remove("active");
+  acIndex = Math.max(-1, Math.min(items.length - 1, acIndex + dir));
+  if (acIndex >= 0) {
+    items[acIndex].classList.add("active");
+    textQueryEl.value = items[acIndex].textContent;
+  }
+}
+
+textQueryEl.addEventListener("input", () => {
+  clearTimeout(acDebounce);
+  const q = textQueryEl.value.trim();
+  if (q.length < 2) { closeAutocomplete(); return; }
+  acDebounce = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/search/autocomplete?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!data.results.length) { closeAutocomplete(); return; }
+      acList.innerHTML = data.results
+        .map((t) => `<div class="autocomplete-item">${t}</div>`)
+        .join("");
+      acList.classList.remove("hidden");
+      acIndex = -1;
+      acList.querySelectorAll(".autocomplete-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          textQueryEl.value = item.textContent;
+          closeAutocomplete();
+          runTextSearch();
+        });
+      });
+    } catch (e) { closeAutocomplete(); }
+  }, 150);
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".search-wrap")) closeAutocomplete();
+});
 
 // ── Upload ───────────────────────────────────────────────
 let uploadFile = null;
