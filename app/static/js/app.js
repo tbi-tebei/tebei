@@ -126,11 +126,12 @@ document.querySelector(".modal-backdrop").addEventListener("click", closeModal);
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 
 // ── Drop zone setup ──────────────────────────────────────
-function setupDropZone(dropId, fileInputId, previewId, placeholderId, onFile) {
+function setupDropZone(dropId, fileInputId, previewId, placeholderId, clearBtnId, onFile, onClear) {
   const drop        = document.getElementById(dropId);
   const fileInput   = document.getElementById(fileInputId);
   const preview     = document.getElementById(previewId);
   const placeholder = document.getElementById(placeholderId);
+  const clearBtn    = document.getElementById(clearBtnId);
 
   function loadFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
@@ -138,8 +139,20 @@ function setupDropZone(dropId, fileInputId, previewId, placeholderId, onFile) {
     preview.src = url;
     preview.classList.remove("hidden");
     placeholder.classList.add("hidden");
+    clearBtn.classList.remove("hidden");
     onFile(file);
   }
+
+  function reset() {
+    preview.src = "";
+    preview.classList.add("hidden");
+    placeholder.classList.remove("hidden");
+    clearBtn.classList.add("hidden");
+    fileInput.value = "";
+    onClear();
+  }
+
+  clearBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
 
   drop.addEventListener("dragover",  (e) => { e.preventDefault(); drop.classList.add("drag-over"); });
   drop.addEventListener("dragleave", ()  => drop.classList.remove("drag-over"));
@@ -156,9 +169,12 @@ function setupDropZone(dropId, fileInputId, previewId, placeholderId, onFile) {
 let searchFile = null;
 const imageBtnEl = document.getElementById("image-btn");
 
-setupDropZone("search-drop", "search-file", "search-preview", "search-placeholder", (f) => {
+setupDropZone("search-drop", "search-file", "search-preview", "search-placeholder", "search-clear", (f) => {
   searchFile = f;
   imageBtnEl.disabled = false;
+}, () => {
+  searchFile = null;
+  imageBtnEl.disabled = true;
 });
 
 imageBtnEl.addEventListener("click", async () => {
@@ -219,9 +235,12 @@ textQueryEl.addEventListener("keydown", (e) => { if (e.key === "Enter") runTextS
 let uploadFile = null;
 const uploadBtnEl = document.getElementById("upload-btn");
 
-setupDropZone("upload-drop", "upload-file", "upload-preview", "upload-placeholder", (f) => {
+setupDropZone("upload-drop", "upload-file", "upload-preview", "upload-placeholder", "upload-clear", (f) => {
   uploadFile = f;
   uploadBtnEl.disabled = false;
+}, () => {
+  uploadFile = null;
+  uploadBtnEl.disabled = true;
 });
 
 uploadBtnEl.addEventListener("click", async () => {
