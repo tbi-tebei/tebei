@@ -16,6 +16,8 @@ const resultsCount  = document.getElementById("results-count");
 const resultsQuery  = document.getElementById("results-query");
 const resultsTime   = document.getElementById("results-time");
 const grid          = document.getElementById("grid");
+const relatedEl     = document.getElementById("related-searches");
+const relatedChips  = document.getElementById("related-chips");
 const spinner       = document.getElementById("spinner");
 const loadMoreWrap  = document.getElementById("load-more-wrap");
 const loadMoreBtn   = document.getElementById("load-more-btn");
@@ -42,7 +44,10 @@ function clearStatus() { statusEl.className = "status hidden"; }
 function clearResults() {
   grid.innerHTML = "";
   resultsMeta.classList.add("hidden");
+  relatedEl.classList.add("hidden");
+  relatedChips.innerHTML = "";
   loadMoreWrap.classList.add("hidden");
+  suggestionsEl.classList.remove("hidden");
   allResults = [];
   displayedCount = 0;
   hideSpinner();
@@ -80,12 +85,56 @@ function showResults(data, elapsed) {
   resultsTime.textContent = elapsed ? `(${(elapsed / 1000).toFixed(1)}s)` : "";
   resultsMeta.classList.remove("hidden");
 
+  suggestionsEl.classList.add("hidden");
+
   if (data.results.length === 0) {
     setStatus("No results found.");
     return;
   }
 
+  showRelated(data.results, data.query);
   loadPage();
+}
+
+const STOP = new Set([
+  "a","an","the","is","are","was","were","in","on","at","to","of","and","or",
+  "for","with","by","from","up","as","it","its","that","this","has","have",
+  "had","be","been","being","not","no","but","if","so","into","over","after",
+  "before","between","through","during","while","out","off","down","then",
+  "there","here","where","when","what","who","which","how","all","each",
+  "every","both","few","more","most","other","some","such","only","own",
+  "same","also","back","he","she","they","him","her","his","their","them",
+  "we","our","you","your","one","two","three","wearing","near","front",
+  "looking","appears","next","another",
+]);
+
+function showRelated(results, query) {
+  const queryWords = new Set(query.toLowerCase().split(/\s+/));
+  const freq = {};
+  for (const r of results) {
+    if (!r.caption) continue;
+    const words = r.caption.toLowerCase().replace(/[.,!?;:'"()]/g, "").split(/\s+/);
+    const seen = new Set();
+    for (const w of words) {
+      if (w.length < 3 || STOP.has(w) || queryWords.has(w) || seen.has(w)) continue;
+      seen.add(w);
+      freq[w] = (freq[w] || 0) + 1;
+    }
+  }
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (!sorted.length) return;
+
+  relatedChips.innerHTML = sorted
+    .map(([w]) => `<button class="related-chip">${w}</button>`)
+    .join("");
+  relatedEl.classList.remove("hidden");
+
+  relatedChips.querySelectorAll(".related-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      textQueryEl.value = chip.textContent;
+      runTextSearch();
+    });
+  });
 }
 
 function loadPage() {
