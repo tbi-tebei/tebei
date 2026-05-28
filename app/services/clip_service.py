@@ -13,8 +13,6 @@ from app.core.config import settings
 MODEL_NAME = "clip-ViT-B-32"
 
 
-HNSW_EF_SEARCH = 64
-
 
 class CLIPService:
     def __init__(self):
@@ -37,7 +35,6 @@ class CLIPService:
         matrix_path = os.path.join(settings.INDEX_DIR, "image_matrix.npy")
         if os.path.exists(index_path) and os.path.exists(ids_path):
             self._index = faiss.read_index(index_path)
-            self._index.hnsw.efSearch = HNSW_EF_SEARCH
             with open(ids_path, encoding="utf-8") as f:
                 self._image_ids = json.load(f)
         if os.path.exists(matrix_path):

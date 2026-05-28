@@ -7,7 +7,7 @@ from app.services.data_store import data_store
 
 router = APIRouter()
 
-ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+ALLOWED_EXT = {".jpg", ".jpeg", ".jpe", ".jfif", ".png", ".webp"}
 
 
 @router.post("/image")

@@ -54,20 +54,18 @@ function clearResults() {
   clearStatus();
 }
 
-function renderCard({ image_id, image_url, score, caption }) {
+function renderCard({ image_id, image_url, score, caption }, index = 0) {
   const pct = Math.round(score * 100);
   const card = document.createElement("div");
   card.className = "card";
+  card.style.animationDelay = `${index * 35}ms`;
   card.innerHTML = `
-    <img src="${image_url}" alt="${image_id}" loading="lazy" />
-    <div class="card-body">
-      <div class="card-score">
-        <div class="score-bar-wrap">
-          <div class="score-bar" style="width:${pct}%"></div>
-        </div>
-        <span class="score-label">${pct}%</span>
+    <div class="card-img-wrap">
+      <img src="${image_url}" alt="" loading="lazy" />
+      <div class="card-overlay">
+        <p class="card-caption">${caption || ""}</p>
       </div>
-      <div class="card-caption">${caption || ""}</div>
+      <span class="card-badge">${pct}%</span>
     </div>`;
   card.addEventListener("click", () => openModal(image_url, caption));
   return card;
@@ -140,7 +138,7 @@ function showRelated(results, query) {
 function loadPage() {
   const end = Math.min(displayedCount + PAGE_SIZE, allResults.length);
   for (let i = displayedCount; i < end; i++) {
-    grid.appendChild(renderCard(allResults[i]));
+    grid.appendChild(renderCard(allResults[i], i - displayedCount));
   }
   displayedCount = end;
   resultsCount.textContent = `${displayedCount} of ${allResults.length}`;

@@ -1,5 +1,13 @@
 import logging
 import os
+
+# PyTorch 2.4.1 libomp crashes on macOS 26 (Tahoe) ARM64 when OpenMP spawns
+# parallel threads for ops like LayerNorm. Force single-threaded to avoid it.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -28,8 +36,6 @@ async def lifespan(app: FastAPI):
 
     logger.info("Loading CLIP model and FAISS index...")
     clip_service.is_ready()
-    logger.info("Loading cross-encoder reranker...")
-    reranker._load()
     logger.info("Models loaded.")
     yield
 
