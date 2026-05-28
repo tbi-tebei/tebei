@@ -193,6 +193,17 @@ class DataStore:
             self.captions[image_id] = []
             self.image_ids.append(image_id)
         self.captions[image_id].append(caption)
+        
+        # Ensure file ends with newline before appending
+        if os.path.exists(settings.CAPTIONS_FILE):
+            with open(settings.CAPTIONS_FILE, "rb") as f:
+                f.seek(0, 2)
+                if f.tell() > 0:
+                    f.seek(-1, 2)
+                    if f.read(1) != b"\n":
+                        with open(settings.CAPTIONS_FILE, "a", encoding="utf-8") as nf:
+                            nf.write("\n")
+        
         with open(settings.CAPTIONS_FILE, "a", newline="", encoding="utf-8") as f:
             csv.writer(f).writerow([image_id, caption])
 
