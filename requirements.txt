@@ -6,21 +6,18 @@ jinja2==3.1.4
 pydantic==2.10.3
 pydantic-settings==2.6.1
 
-# Probably bakalan digunakan untuk model nya
-# rank-bm25==0.2.2              # BM25
-# scikit-learn==1.5.2           # TF-IDF, evaluation metrics
-
-# Multimodal / image retrieval
-# open-clip-torch==2.26.1       # CLIP embeddings
-# sentence-transformers==3.3.1  # Sentence/image embeddings via HuggingFace
-# faiss-cpu==1.9.0              # Vector similarity index
-# faiss-gpu==1.7.4              # Vector similarity index
-# Pillow==11.0.0                # Image I/O
-
-# Utilities
-# numpy==1.26.4
-# pandas==2.2.3
-# tqdm==4.67.1
+# Text-image retrieval (CLIP multilingual)
+torch==2.4.1
+sentence-transformers==3.3.1
+faiss-cpu>=1.9.0
+Pillow>=11.0.0
+numpy>=1.26.4
+tqdm>=4.67.1
+deep-translator==1.11.4
+requests>=2.31.0
+rank-bm25>=0.2.2
+nltk>=3.8
+slowapi>=0.1.9
 
 # Dev / testing
 pytest==8.3.4

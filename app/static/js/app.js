@@ -1,1 +1,392 @@
-// app.js
+// ── Tab switching ────────────────────────────────────────
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(`panel-${tab.dataset.tab}`).classList.add("active");
+    clearResults();
+  });
+});
+
+// ── Shared helpers ───────────────────────────────────────
+const statusEl      = document.getElementById("status");
+const resultsMeta   = document.getElementById("results-meta");
+const resultsCount  = document.getElementById("results-count");
+const resultsQuery  = document.getElementById("results-query");
+const resultsTime   = document.getElementById("results-time");
+const grid          = document.getElementById("grid");
+const relatedEl     = document.getElementById("related-searches");
+const relatedChips  = document.getElementById("related-chips");
+const spinner       = document.getElementById("spinner");
+const loadMoreWrap  = document.getElementById("load-more-wrap");
+const loadMoreBtn   = document.getElementById("load-more-btn");
+
+const PAGE_SIZE = 12;
+let allResults = [];
+let displayedCount = 0;
+
+function showSpinner(msg) {
+  spinner.querySelector(".spinner-text").textContent = msg || "Searching...";
+  spinner.classList.remove("hidden");
+}
+
+function hideSpinner() { spinner.classList.add("hidden"); }
+
+function setStatus(msg, type = "") {
+  statusEl.textContent = msg;
+  statusEl.className = `status${type ? " " + type : ""}`;
+  statusEl.classList.remove("hidden");
+}
+
+function clearStatus() { statusEl.className = "status hidden"; }
+
+function clearResults() {
+  grid.innerHTML = "";
+  resultsMeta.classList.add("hidden");
+  relatedEl.classList.add("hidden");
+  relatedChips.innerHTML = "";
+  loadMoreWrap.classList.add("hidden");
+  suggestionsEl.classList.remove("hidden");
+  allResults = [];
+  displayedCount = 0;
+  hideSpinner();
+  clearStatus();
+}
+
+function renderCard({ image_id, image_url, score, caption }, index = 0) {
+  const pct = Math.round(score * 100);
+  const card = document.createElement("div");
+  card.className = "card";
+  card.style.animationDelay = `${index * 35}ms`;
+  card.innerHTML = `
+    <div class="card-img-wrap">
+      <img src="${image_url}" alt="" loading="lazy" />
+      <div class="card-overlay">
+        <p class="card-caption">${caption || ""}</p>
+      </div>
+      <span class="card-badge">${pct}%</span>
+    </div>`;
+  card.addEventListener("click", () => openModal(image_url, caption));
+  return card;
+}
+
+function showResults(data, elapsed) {
+  hideSpinner();
+  clearStatus();
+
+  allResults = data.results;
+  displayedCount = 0;
+
+  resultsCount.textContent = `${Math.min(PAGE_SIZE, data.results.length)} of ${data.total}`;
+  resultsQuery.textContent = data.query;
+  resultsTime.textContent = elapsed ? `(${(elapsed / 1000).toFixed(1)}s)` : "";
+  resultsMeta.classList.remove("hidden");
+
+  suggestionsEl.classList.add("hidden");
+
+  if (data.results.length === 0) {
+    setStatus("No results found.");
+    return;
+  }
+
+  showRelated(data.results, data.query);
+  loadPage();
+}
+
+const STOP = new Set([
+  "a","an","the","is","are","was","were","in","on","at","to","of","and","or",
+  "for","with","by","from","up","as","it","its","that","this","has","have",
+  "had","be","been","being","not","no","but","if","so","into","over","after",
+  "before","between","through","during","while","out","off","down","then",
+  "there","here","where","when","what","who","which","how","all","each",
+  "every","both","few","more","most","other","some","such","only","own",
+  "same","also","back","he","she","they","him","her","his","their","them",
+  "we","our","you","your","one","two","three","wearing","near","front",
+  "looking","appears","next","another",
+]);
+
+function showRelated(results, query) {
+  const queryWords = new Set(query.toLowerCase().split(/\s+/));
+  const freq = {};
+  for (const r of results) {
+    if (!r.caption) continue;
+    const words = r.caption.toLowerCase().replace(/[.,!?;:'"()]/g, "").split(/\s+/);
+    const seen = new Set();
+    for (const w of words) {
+      if (w.length < 3 || STOP.has(w) || queryWords.has(w) || seen.has(w)) continue;
+      seen.add(w);
+      freq[w] = (freq[w] || 0) + 1;
+    }
+  }
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (!sorted.length) return;
+
+  relatedChips.innerHTML = sorted
+    .map(([w]) => `<button class="related-chip">${w}</button>`)
+    .join("");
+  relatedEl.classList.remove("hidden");
+
+  relatedChips.querySelectorAll(".related-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      textQueryEl.value = chip.textContent;
+      runTextSearch();
+    });
+  });
+}
+
+function loadPage() {
+  const end = Math.min(displayedCount + PAGE_SIZE, allResults.length);
+  for (let i = displayedCount; i < end; i++) {
+    grid.appendChild(renderCard(allResults[i], i - displayedCount));
+  }
+  displayedCount = end;
+  resultsCount.textContent = `${displayedCount} of ${allResults.length}`;
+
+  if (displayedCount < allResults.length) {
+    loadMoreWrap.classList.remove("hidden");
+  } else {
+    loadMoreWrap.classList.add("hidden");
+  }
+}
+
+loadMoreBtn.addEventListener("click", loadPage);
+
+// ── Modal ────────────────────────────────────────────────
+const modal        = document.getElementById("modal");
+const modalImg     = document.getElementById("modal-img");
+const modalCaption = document.getElementById("modal-caption");
+
+function openModal(src, caption) {
+  modalImg.src = src;
+  modalCaption.textContent = caption || "";
+  modal.classList.remove("hidden");
+}
+
+function closeModal() {
+  modal.classList.add("hidden");
+  modalImg.src = "";
+}
+
+document.getElementById("modal-close").addEventListener("click", closeModal);
+document.querySelector(".modal-backdrop").addEventListener("click", closeModal);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+
+// ── Drop zone setup ──────────────────────────────────────
+function setupDropZone(dropId, fileInputId, previewId, placeholderId, clearBtnId, onFile, onClear) {
+  const drop        = document.getElementById(dropId);
+  const fileInput   = document.getElementById(fileInputId);
+  const preview     = document.getElementById(previewId);
+  const placeholder = document.getElementById(placeholderId);
+  const clearBtn    = document.getElementById(clearBtnId);
+
+  function loadFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    preview.classList.remove("hidden");
+    placeholder.classList.add("hidden");
+    clearBtn.classList.remove("hidden");
+    onFile(file);
+  }
+
+  function reset() {
+    preview.src = "";
+    preview.classList.add("hidden");
+    placeholder.classList.remove("hidden");
+    clearBtn.classList.add("hidden");
+    fileInput.value = "";
+    onClear();
+  }
+
+  clearBtn.addEventListener("click", (e) => { e.stopPropagation(); reset(); });
+
+  drop.addEventListener("dragover",  (e) => { e.preventDefault(); drop.classList.add("drag-over"); });
+  drop.addEventListener("dragleave", ()  => drop.classList.remove("drag-over"));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.classList.remove("drag-over");
+    loadFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener("change", () => loadFile(fileInput.files[0]));
+}
+
+// ── Image Search ─────────────────────────────────────────
+let searchFile = null;
+const imageBtnEl = document.getElementById("image-btn");
+
+setupDropZone("search-drop", "search-file", "search-preview", "search-placeholder", "search-clear", (f) => {
+  searchFile = f;
+  imageBtnEl.disabled = false;
+}, () => {
+  searchFile = null;
+  imageBtnEl.disabled = true;
+});
+
+imageBtnEl.addEventListener("click", async () => {
+  if (!searchFile) return;
+  imageBtnEl.disabled = true;
+  clearResults();
+  showSpinner("Searching for similar images...");
+
+  const form = new FormData();
+  form.append("image", searchFile);
+  form.append("top_k", 36);
+
+  const t0 = Date.now();
+  try {
+    const res = await fetch("/api/search/image", { method: "POST", body: form });
+    if (!res.ok) throw new Error(await res.text());
+    showResults(await res.json(), Date.now() - t0);
+  } catch (err) {
+    hideSpinner();
+    setStatus(`Error: ${err.message}`, "error");
+  } finally {
+    imageBtnEl.disabled = false;
+  }
+});
+
+// ── Text Search ──────────────────────────────────────────
+const textBtnEl   = document.getElementById("text-btn");
+const textQueryEl = document.getElementById("text-query");
+
+async function runTextSearch() {
+  const query = textQueryEl.value.trim();
+  if (!query) return;
+  textBtnEl.disabled = true;
+  clearResults();
+  showSpinner("Searching...");
+
+  const t0 = Date.now();
+  try {
+    const res = await fetch("/api/search/text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, top_k: 36 }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showResults(await res.json(), Date.now() - t0);
+  } catch (err) {
+    hideSpinner();
+    setStatus(`Error: ${err.message}`, "error");
+  } finally {
+    textBtnEl.disabled = false;
+  }
+}
+
+textBtnEl.addEventListener("click", runTextSearch);
+textQueryEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { closeAutocomplete(); runTextSearch(); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); navigateAutocomplete(1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); navigateAutocomplete(-1); }
+  else if (e.key === "Escape") { closeAutocomplete(); }
+});
+
+// ── Suggestions ──────────────────────────────────────────
+const suggestionsEl = document.getElementById("suggestions");
+
+fetch("/api/search/suggestions")
+  .then((r) => r.json())
+  .then((data) => {
+    suggestionsEl.innerHTML = data.suggestions
+      .map((s) => `<button class="suggestion-chip">${s}</button>`)
+      .join("");
+    suggestionsEl.querySelectorAll(".suggestion-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        textQueryEl.value = chip.textContent;
+        runTextSearch();
+      });
+    });
+  })
+  .catch(() => {});
+
+// ── Autocomplete ─────────────────────────────────────────
+const acList = document.getElementById("autocomplete-list");
+let acIndex = -1;
+let acDebounce = null;
+
+function closeAutocomplete() {
+  acList.classList.add("hidden");
+  acList.innerHTML = "";
+  acIndex = -1;
+}
+
+function navigateAutocomplete(dir) {
+  const items = acList.querySelectorAll(".autocomplete-item");
+  if (!items.length) return;
+  items[acIndex]?.classList.remove("active");
+  acIndex = Math.max(-1, Math.min(items.length - 1, acIndex + dir));
+  if (acIndex >= 0) {
+    items[acIndex].classList.add("active");
+    textQueryEl.value = items[acIndex].textContent;
+  }
+}
+
+textQueryEl.addEventListener("input", () => {
+  clearTimeout(acDebounce);
+  const q = textQueryEl.value.trim();
+  if (q.length < 2) { closeAutocomplete(); return; }
+  acDebounce = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/search/autocomplete?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!data.results.length) { closeAutocomplete(); return; }
+      acList.innerHTML = data.results
+        .map((t) => `<div class="autocomplete-item">${t}</div>`)
+        .join("");
+      acList.classList.remove("hidden");
+      acIndex = -1;
+      acList.querySelectorAll(".autocomplete-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          textQueryEl.value = item.textContent;
+          closeAutocomplete();
+          runTextSearch();
+        });
+      });
+    } catch (e) { closeAutocomplete(); }
+  }, 150);
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".search-wrap")) closeAutocomplete();
+});
+
+// ── Upload ───────────────────────────────────────────────
+let uploadFile = null;
+const uploadBtnEl = document.getElementById("upload-btn");
+
+setupDropZone("upload-drop", "upload-file", "upload-preview", "upload-placeholder", "upload-clear", (f) => {
+  uploadFile = f;
+  uploadBtnEl.disabled = false;
+}, () => {
+  uploadFile = null;
+  uploadBtnEl.disabled = true;
+});
+
+uploadBtnEl.addEventListener("click", async () => {
+  if (!uploadFile) return;
+  const caption = document.getElementById("upload-caption").value.trim();
+  if (!caption) { setStatus("Please add a caption before uploading.", "error"); return; }
+
+  uploadBtnEl.disabled = true;
+  showSpinner("Uploading...");
+
+  const form = new FormData();
+  form.append("image", uploadFile);
+  form.append("caption", caption);
+
+  try {
+    const res = await fetch("/api/upload/image", { method: "POST", body: form });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    hideSpinner();
+    setStatus(`Uploaded "${data.image_id}" successfully.`, "success");
+    document.getElementById("upload-caption").value = "";
+  } catch (err) {
+    hideSpinner();
+    setStatus(`Upload failed: ${err.message}`, "error");
+  } finally {
+    uploadBtnEl.disabled = false;
+  }
+});

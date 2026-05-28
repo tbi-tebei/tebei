@@ -44,6 +44,9 @@ Thumbs.db
 .idea/
 *.swp
 
+# Dev notes (local only)
+dev-note.md
+
 # Testing
 .pytest_cache/
 .coverage
