@@ -11,6 +11,17 @@
 
 ---
 
+## Team
+
+| Name | NPM |
+|---|---|
+| Muhammad Hafiz | 2206082732 |
+| Ratu Nadya Anjania | 2206029752 |
+| Wahyu Hidayat | 2206081894 |
+
+---
+
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -480,15 +491,6 @@ make build-index  # Trigger index rebuild via API (server must be running)
 - **In-process BM25.** `rank-bm25` runs in memory and tokenizes on whitespace. A production system would benefit from proper stemming, an inverted index on disk, and support for phrase queries.
 - **Index rebuild required.** Switching the FAISS index type or changing the dataset requires re-running `build_index.py`. The upload endpoint supports incremental insertion for new images only.
 
----
-
-## Team
-
-| Name | NPM | Contributions |
-|---|---|---|
-| Muhammad Hafiz | 2206082732 | CLIP service, FAISS index, Rocchio PRF, architecture |
-| Ratu Nadya Anjania | 2206029752 | Cross-encoder reranker, upload pipeline |
-| Wahyu Hidayat | 2206081894 | Search suggestions, Patricia tree autocomplete |
 
 ---
 
