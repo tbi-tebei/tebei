@@ -3,11 +3,15 @@ from app.services.query_expansion import expand_with_llm
 from app.services.reranker import reranker
 from deep_translator import GoogleTranslator
 
-
 RERANKER_FALLBACK_THRESHOLD = 0.1
 
 
 def _translate_to_english(query: str) -> str:
+    """Auto-detect the query language and translate it to English.
+
+    Returns the original query unchanged if translation fails, so the
+    pipeline degrades gracefully without raising an exception.
+    """
     try:
         translated = GoogleTranslator(source="auto", target="en").translate(query)
         return translated if translated else query
@@ -19,7 +23,12 @@ def _fuse_results(
     vector_hits: list[tuple[str, float]],
     bm25_hits: list[tuple[str, float]],
 ) -> list[tuple[str, float]]:
-    """Combine vector and BM25 results using reciprocal rank fusion (RRF)."""
+    """Merge semantic and lexical result lists using Reciprocal Rank Fusion.
+
+    RRF score: score(d) = sum(1 / (k + rank_i(d))) where k=60.
+    Documents appearing in both lists receive a higher combined score than
+    those found by only one retriever.
+    """
     k = 60
     scores: dict[str, float] = {}
     for rank, (img_id, _) in enumerate(vector_hits):
@@ -29,7 +38,8 @@ def _fuse_results(
     return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 
-def _format_hits(hits):
+def _format_hits(hits: list[tuple[str, float]]) -> list[dict]:
+    """Convert (image_id, score) pairs into the response dict format."""
     return [
         {
             "image_id": img_id,
@@ -41,7 +51,24 @@ def _format_hits(hits):
 
 
 class TextRetriever:
+    """End-to-end text-to-image retrieval pipeline.
+
+    Stages (in order):
+    1. Translate the query to English.
+    2. Expand the query with LLM-generated visual descriptions + Rocchio PRF.
+    3. Run parallel semantic (CLIP + FAISS) and lexical (BM25) retrieval.
+    4. Fuse the two result lists with Reciprocal Rank Fusion.
+    5. Rerank the fused candidates with a cross-encoder.
+    """
+
     def search(self, query: str, top_k: int = 12) -> list[dict]:
+        """Execute the full retrieval pipeline and return ranked results.
+
+        Falls back to the RRF-fused ranking when the cross-encoder top score
+        is below ``RERANKER_FALLBACK_THRESHOLD``, which indicates that no
+        (query, caption) pair is a strong match and reranking would degrade
+        the result quality.
+        """
         translated_query = _translate_to_english(query)
 
         vector_hits, _ = expand_with_llm(translated_query, top_k=top_k * 3)

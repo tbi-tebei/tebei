@@ -1,8 +1,6 @@
 import logging
 import os
 
-# PyTorch 2.4.1 libomp crashes on macOS 26 (Tahoe) ARM64 when OpenMP spawns
-# parallel threads for ops like LayerNorm. Force single-threaded to avoid it.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -22,7 +20,6 @@ from app.api.routes import search, upload
 from app.core.config import settings
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
-
 logger = logging.getLogger(__name__)
 
 os.makedirs(settings.IMAGES_DIR, exist_ok=True)
@@ -31,8 +28,9 @@ os.makedirs(settings.INDEX_DIR, exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Load the CLIP model and FAISS index once at startup so the first request
+    does not pay the cold-start cost."""
     from app.services.clip_service import clip_service
-    from app.services.reranker import reranker
 
     logger.info("Loading CLIP model and FAISS index...")
     clip_service.is_ready()
@@ -56,9 +54,11 @@ templates = Jinja2Templates(directory="app/templates")
 
 @app.get("/")
 async def home(request: Request):
+    """Serve the single-page search UI."""
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/api/health")
 async def health():
+    """Liveness probe used by Docker health checks and uptime monitors."""
     return {"status": "ok"}

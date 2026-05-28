@@ -6,13 +6,13 @@ import numpy as np
 from app.core.config import settings
 from app.services.clip_service import clip_service
 
-ALPHA = 1.0 # controls how much the original query influences the refined vector
-BETA = 0.75 # controls how much the pseudo-relevant feedback shifts the query
-GAMMA = 0.15 # controls how much the negative feedback pushes the query away
-K_FEEDBACK = 10 # number of top results assumed relevant (positive examples)
-K_NEGATIVE = 10 # number of bottom results used as negative examples
+# Rocchio feedback weights
+ALPHA = 1.0       # weight for the original query vector
+BETA = 0.75       # weight for the positive-example centroid
+GAMMA = 0.15      # weight for the negative-example centroid
+K_FEEDBACK = 10   # number of top results used as positive pseudo-relevant examples
+K_NEGATIVE = 10   # number of bottom results used as negative examples
 
-# Gemini configuration
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_URL = (
     f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}"
@@ -30,10 +30,13 @@ def _rocchio_refine(
     positive_indices: list[int],
     negative_indices: list[int],
 ) -> np.ndarray:
-    """Apply the full Rocchio formula with positive and negative feedback.
+    """Apply the Rocchio algorithm to refine a query embedding.
 
-    Computes: refined = ALPHA * query + BETA * mean(positive) - GAMMA * mean(negative),
-    then L2-normalizes so cosine similarity still works with IndexFlatIP.
+    Formula:
+        refined = ALPHA * q + BETA * mean(positive) - GAMMA * mean(negative)
+
+    The result is L2-normalised so it remains compatible with the
+    inner-product similarity used by ``IndexFlatIP``.
     """
     pos_vecs = clip_service.get_vectors(positive_indices)
     pos_centroid = np.mean(pos_vecs, axis=0, keepdims=True)
@@ -52,10 +55,11 @@ def _rocchio_refine(
 
 
 def _get_feedback(emb: np.ndarray) -> tuple[list[int], list[int]]:
-    """Retrieve positive (top-K) and negative (bottom-K) indices.
+    """Return positive and negative pseudo-relevant document indices.
 
-    Positive: top-K most similar vectors via HNSW index.
-    Negative: top-K most dissimilar vectors via brute-force dot product.
+    Positive indices are the top-K most similar vectors found via FAISS search.
+    Negative indices are the top-K most dissimilar vectors found via brute-force
+    dot product over the raw embedding matrix.
     """
     n_total = clip_service._index.ntotal
     k_pos = min(K_FEEDBACK, n_total)
@@ -64,7 +68,6 @@ def _get_feedback(emb: np.ndarray) -> tuple[list[int], list[int]]:
     emb_f32 = emb.astype(np.float32)
     _, pos_indices = clip_service._index.search(emb_f32, k_pos)
     positive = [int(i) for i in pos_indices[0] if i >= 0]
-
     negative = clip_service.search_negative(emb_f32, k_neg)
 
     return positive, negative
@@ -72,7 +75,12 @@ def _get_feedback(emb: np.ndarray) -> tuple[list[int], list[int]]:
 
 @lru_cache(maxsize=256)
 def _call_gemini(query: str) -> tuple[str, ...]:
-    """Call Gemini API to generate visual descriptions. Results are cached."""
+    """Call the Gemini API to generate visual photo descriptions for a query.
+
+    Results are cached by query string to avoid redundant API calls for
+    repeated or popular searches. Returns an empty tuple when the API key is
+    missing or the request fails, so callers can fall back gracefully.
+    """
     api_key = settings.GEMINI_API_KEY
     if not api_key:
         return ()
@@ -98,7 +106,13 @@ def _call_gemini(query: str) -> tuple[str, ...]:
 
 
 def _encode_with_llm(query: str) -> tuple[np.ndarray, list[str]]:
-    """Encode query + LLM-generated descriptions into an averaged CLIP vector."""
+    """Encode a query enriched with LLM-generated visual descriptions.
+
+    Calls Gemini to produce up to 3 photo descriptions, then encodes the
+    original query together with those descriptions using CLIP and returns
+    their L2-normalised average as a single query vector. Falls back to
+    encoding the raw query alone when Gemini is unavailable.
+    """
     descriptions = list(_call_gemini(query))
     if not descriptions:
         return clip_service.encode_text(query), descriptions
@@ -111,7 +125,12 @@ def _encode_with_llm(query: str) -> tuple[np.ndarray, list[str]]:
 
 
 def expand_image_query(image_bytes: bytes, top_k: int = 12) -> list[tuple[str, float]]:
-    """Image-to-image search with PRF only."""
+    """Run image-to-image search with Rocchio pseudo-relevance feedback.
+
+    Encodes the query image with CLIP, refines the embedding using Rocchio
+    PRF, then returns the top-k most similar images from the FAISS index.
+    Falls back to a plain embedding search when feedback data is unavailable.
+    """
     emb = clip_service.encode_image(image_bytes)
     if not clip_service.is_ready():
         return []
@@ -125,11 +144,15 @@ def expand_image_query(image_bytes: bytes, top_k: int = 12) -> list[tuple[str, f
 
 
 def expand_with_llm(query: str, top_k: int = 12) -> tuple[list[tuple[str, float]], list[str]]:
-    """Text-to-image search with LLM expansion + PRF.
+    """Run text-to-image search with LLM expansion and Rocchio PRF.
 
-    1. Call Gemini to generate visual descriptions.
-    2. Encode original query + descriptions with CLIP, average vectors.
-    3. Run PRF (Rocchio with negative feedback) on the averaged vector.
+    Pipeline:
+    1. Call Gemini to generate visual descriptions for the query.
+    2. Encode query + descriptions with CLIP and average the vectors.
+    3. Refine the averaged vector with Rocchio PRF (positive + negative feedback).
+    4. Search the FAISS index with the refined vector.
+
+    Returns a tuple of (ranked results, llm descriptions used).
     """
     avg_emb, descriptions = _encode_with_llm(query)
     if not clip_service.is_ready():
